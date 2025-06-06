@@ -12,52 +12,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { EmployeeForm } from "./EmployeeForm";
+import { useEmployees, Employee } from "@/hooks/useEmployees";
+import { useToast } from "@/hooks/use-toast";
 
 export const EmployeeDirectory = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
   
-  const employees = [
-    {
-      id: "EMP001",
-      name: "John Doe",
-      email: "john.doe@company.com",
-      department: "Engineering",
-      designation: "Senior Software Engineer",
-      phone: "+1 234 567 8900",
-      status: "Active",
-      joinDate: "2023-01-15"
-    },
-    {
-      id: "EMP002", 
-      name: "Sarah Wilson",
-      email: "sarah.wilson@company.com",
-      department: "Marketing",
-      designation: "Marketing Manager",
-      phone: "+1 234 567 8901",
-      status: "Active",
-      joinDate: "2023-03-20"
-    },
-    {
-      id: "EMP003",
-      name: "Mike Johnson", 
-      email: "mike.johnson@company.com",
-      department: "Sales",
-      designation: "Sales Executive",
-      phone: "+1 234 567 8902",
-      status: "On Leave",
-      joinDate: "2023-02-10"
-    },
-    {
-      id: "EMP004",
-      name: "Emily Davis",
-      email: "emily.davis@company.com", 
-      department: "HR",
-      designation: "HR Specialist",
-      phone: "+1 234 567 8903",
-      status: "Active",
-      joinDate: "2023-04-05"
-    }
-  ];
+  const { employees, addEmployee, updateEmployee, deleteEmployee } = useEmployees();
+  const { toast } = useToast();
 
   const filteredEmployees = employees.filter(employee =>
     employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,6 +51,42 @@ export const EmployeeDirectory = () => {
     }
   };
 
+  const handleAddEmployee = () => {
+    setEditingEmployee(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteEmployee = (employee: Employee) => {
+    setEmployeeToDelete(employee);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (employeeToDelete) {
+      deleteEmployee(employeeToDelete.id);
+      toast({
+        title: "Employee Deleted",
+        description: `${employeeToDelete.name} has been removed from the system.`,
+        variant: "destructive"
+      });
+      setEmployeeToDelete(null);
+      setDeleteConfirmOpen(false);
+    }
+  };
+
+  const handleSaveEmployee = (employee: Employee) => {
+    if (editingEmployee) {
+      updateEmployee(employee);
+    } else {
+      addEmployee(employee);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -81,7 +94,10 @@ export const EmployeeDirectory = () => {
           <h1 className="text-3xl font-bold text-gray-900">Employee Directory</h1>
           <p className="text-gray-600">Manage and view all employee information</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={handleAddEmployee}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Employee
         </Button>
@@ -158,15 +174,18 @@ export const EmployeeDirectory = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-white">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditEmployee(employee)}>
                             <Eye className="h-4 w-4 mr-2" />
                             View Profile
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditEmployee(employee)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Employee
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => handleDeleteEmployee(employee)}
+                          >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Remove Employee
                           </DropdownMenuItem>
@@ -180,6 +199,34 @@ export const EmployeeDirectory = () => {
           </div>
         </CardContent>
       </Card>
+
+      <EmployeeForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        employee={editingEmployee}
+        onSave={handleSaveEmployee}
+      />
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the employee
+              "{employeeToDelete?.name}" from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
