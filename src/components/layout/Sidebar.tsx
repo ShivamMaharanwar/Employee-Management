@@ -9,8 +9,11 @@ import {
   MessageSquare, 
   BarChart3,
   Settings,
-  Building2
+  Building2,
+  Shield
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserMenu } from "./UserMenu";
 
 interface SidebarProps {
   activeModule: string;
@@ -18,16 +21,24 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ activeModule, setActiveModule }: SidebarProps) => {
+  const { hasPermission } = useAuth();
+
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "employees", label: "Employee Directory", icon: Users },
-    { id: "attendance", label: "Attendance", icon: Clock },
-    { id: "leave", label: "Leave Management", icon: Calendar },
-    { id: "tasks", label: "Task Management", icon: CheckSquare },
-    { id: "documents", label: "Documents", icon: FileText },
-    { id: "communication", label: "Communication", icon: MessageSquare },
-    { id: "reports", label: "Reports", icon: BarChart3 },
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, permission: null },
+    { id: "employees", label: "Employee Directory", icon: Users, permission: "employee:read" },
+    { id: "attendance", label: "Attendance", icon: Clock, permission: "attendance:read" },
+    { id: "leave", label: "Leave Management", icon: Calendar, permission: "leave:read" },
+    { id: "tasks", label: "Task Management", icon: CheckSquare, permission: "tasks:read" },
+    { id: "documents", label: "Documents", icon: FileText, permission: "documents:read" },
+    { id: "communication", label: "Communication", icon: MessageSquare, permission: null },
+    { id: "reports", label: "Reports", icon: BarChart3, permission: "reports:read" },
+    { id: "security", label: "Security", icon: Shield, permission: "security:read" },
   ];
+
+  // Filter menu items based on user permissions
+  const accessibleMenuItems = menuItems.filter(item => 
+    !item.permission || hasPermission(item.permission)
+  );
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-sm">
@@ -41,8 +52,8 @@ export const Sidebar = ({ activeModule, setActiveModule }: SidebarProps) => {
         </div>
       </div>
       
-      <nav className="mt-6 px-3">
-        {menuItems.map((item) => {
+      <nav className="mt-6 px-3 flex-1">
+        {accessibleMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeModule === item.id;
           
@@ -63,7 +74,10 @@ export const Sidebar = ({ activeModule, setActiveModule }: SidebarProps) => {
         })}
       </nav>
       
-      <div className="absolute bottom-4 left-3 right-3">
+      <div className="absolute bottom-4 left-3 right-3 space-y-2">
+        <div className="flex items-center justify-between px-3">
+          <UserMenu />
+        </div>
         <button className="w-full flex items-center space-x-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">
           <Settings className="h-5 w-5 text-gray-500" />
           <span className="font-medium">Settings</span>

@@ -9,6 +9,7 @@ import { TaskManagement } from "@/components/tasks/TaskManagement";
 import { DocumentManagement } from "@/components/documents/DocumentManagement";
 import { Communication } from "@/components/communication/Communication";
 import { Reports } from "@/components/reports/Reports";
+import { SecurityDashboard } from "@/components/security/SecurityDashboard";
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState("dashboard");
@@ -31,6 +32,8 @@ const Index = () => {
         return <Communication />;
       case "reports":
         return <Reports />;
+      case "security":
+        return <SecurityDashboard />;
       default:
         return <Dashboard />;
     }
