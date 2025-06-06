@@ -12,6 +12,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
+  signup: (email: string, password: string, name: string, role: 'admin' | 'hr' | 'manager' | 'employee', department?: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   hasPermission: (permission: string) => boolean;
@@ -47,8 +48,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
-    // TODO: Replace with actual Supabase authentication
-    // Temporary mock authentication for demonstration
+    // Check registered users first
+    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    const foundUser = registeredUsers.find((u: any) => u.email === email && u.password === password);
+    
+    if (foundUser) {
+      const { password: _, ...userWithoutPassword } = foundUser;
+      setUser(userWithoutPassword);
+      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+      setIsLoading(false);
+      return true;
+    }
+    
+    // Fallback to demo admin account
     if (email === 'admin@company.com' && password === 'admin123') {
       const mockUser: User = {
         id: '1',
@@ -64,6 +76,36 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     setIsLoading(false);
     return false;
+  };
+
+  const signup = async (email: string, password: string, name: string, role: 'admin' | 'hr' | 'manager' | 'employee', department?: string): Promise<boolean> => {
+    setIsLoading(true);
+    
+    // Get existing users
+    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    
+    // Check if user already exists
+    if (registeredUsers.find((u: any) => u.email === email)) {
+      setIsLoading(false);
+      return false;
+    }
+    
+    // Create new user
+    const newUser = {
+      id: Date.now().toString(),
+      email,
+      password,
+      name,
+      role,
+      department
+    };
+    
+    // Save to registered users
+    registeredUsers.push(newUser);
+    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+    
+    setIsLoading(false);
+    return true;
   };
 
   const logout = () => {
@@ -86,7 +128,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, hasPermission }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, isLoading, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );
